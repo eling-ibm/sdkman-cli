@@ -27,7 +27,9 @@ function __sdk_list() {
 }
 
 function __sdkman_list_candidates() {
-	if [[ "$SDKMAN_AVAILABLE" == "false" ]]; then
+	if __sdkman_offline_mode_enabled; then
+		__sdkman_offline_list_candidates
+	elif [[ "$SDKMAN_AVAILABLE" == "false" ]]; then
 		__sdkman_echo_red "This command is not available. Internet unreachable."
 	else
 		__sdkman_echo_paged "$(__sdkman_secure_curl "${SDKMAN_CANDIDATES_API}/candidates/list")"
@@ -61,18 +63,23 @@ function __sdkman_installed_versions() {
 	__sdkman_echo_yellow "Offline: only showing installed ${candidate} versions"
 	__sdkman_echo_no_colour "--------------------------------------------------------------------------------"
 
-	local versions=($(echo ${versions_csv//,/ }))
-	for ((i = ${#versions} - 1; i >= 0; i--)); do
-		if [[ -n "${versions[${i}]}" ]]; then
-			if [[ "${versions[${i}]}" == "$CURRENT" ]]; then
-				__sdkman_echo_no_colour " > ${versions[${i}]}"
+	# Iterate with read rather than an indexed loop: bash arrays are 0-indexed
+	# and zsh arrays are 1-indexed, and '${#versions}' means element count in
+	# zsh but string length of the first element in bash. The csv is built in
+	# ascending order, so 'sort -r' restores the descending display order.
+	local version has_versions='false'
+	while IFS= read -r version; do
+		if [[ -n "$version" ]]; then
+			has_versions='true'
+			if [[ "$version" == "$CURRENT" ]]; then
+				__sdkman_echo_no_colour " > ${version}"
 			else
-				__sdkman_echo_no_colour " * ${versions[${i}]}"
+				__sdkman_echo_no_colour " * ${version}"
 			fi
 		fi
-	done
+	done <<< "$(echo "$versions_csv" | tr ',' '\n' | sort -r)"
 
-	if [[ -z "${versions[@]}" ]]; then
+	if [[ "$has_versions" == 'false' ]]; then
 		__sdkman_echo_yellow "   None installed!"
 	fi
 

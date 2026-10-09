@@ -17,6 +17,13 @@
 #
 
 function __sdkman_update_service_availability() {
+	# Offline mode never talks to the API, so skip the healthcheck entirely
+	# rather than stalling on a curl timeout and printing a network warning.
+	if __sdkman_offline_mode_enabled; then
+		SDKMAN_AVAILABLE="false"
+		return
+	fi
+
 	if [[ "$sdkman_healthcheck_enable" == "false" ]]; then
 		return
 	fi

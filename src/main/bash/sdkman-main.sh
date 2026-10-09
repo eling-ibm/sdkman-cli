@@ -125,8 +125,10 @@ function sdk() {
 
 	elif [ -n "$CMD_FOUND" ]; then
 
-		# Check whether the candidate exists
-		if [[ -n "$QUALIFIER" && "$COMMAND" != "help" && "$COMMAND" != "flush" && "$COMMAND" != "selfupdate" && "$COMMAND" != "env" && "$COMMAND" != "completion" && "$COMMAND" != "edit" && "$COMMAND" != "home" && -z $(echo ${SDKMAN_CANDIDATES[@]} | grep -w "$QUALIFIER") ]]; then
+		# Check whether the candidate exists. In offline mode a folder under
+		# candidates/ is proof enough, so versions dropped on disk are usable
+		# without first refreshing the candidates cache over the API.
+		if [[ -n "$QUALIFIER" && "$COMMAND" != "help" && "$COMMAND" != "flush" && "$COMMAND" != "selfupdate" && "$COMMAND" != "env" && "$COMMAND" != "completion" && "$COMMAND" != "edit" && "$COMMAND" != "home" && -z $(echo ${SDKMAN_CANDIDATES[@]} | grep -w "$QUALIFIER") ]] && ! __sdkman_offline_candidate_known "$QUALIFIER"; then
 			echo ""
 			__sdkman_echo_red "Stop! $QUALIFIER is not a valid candidate."
 			return 1

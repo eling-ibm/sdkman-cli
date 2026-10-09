@@ -24,6 +24,14 @@ function __sdk_install() {
 	folder="$3"
 
 	__sdkman_check_candidate_present "$candidate" || return 1
+
+	# Offline mode: resolve against the candidates folder and make the version
+	# current, without validating or downloading anything over the API.
+	if __sdkman_offline_mode_enabled; then
+		__sdkman_offline_install "$candidate" "$version" "$folder"
+		return $?
+	fi
+
 	__sdkman_determine_version "$candidate" "$version" "$folder" || return 1
 
 	if [[ -d "${SDKMAN_CANDIDATES_DIR}/${candidate}/${VERSION}" || -L "${SDKMAN_CANDIDATES_DIR}/${candidate}/${VERSION}" ]]; then
